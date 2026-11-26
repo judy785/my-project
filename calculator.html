@@ -1,0 +1,883 @@
+<!DOCTYPE html>
+<html lang="ko" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>스마트 웹 계산기 (Smart Web Calculator)</title>
+  <!-- Pretendard Web Font -->
+  <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+  <style>
+    :root {
+      --bg-gradient: radial-gradient(circle at 50% 10%, #1e293b 0%, #0f172a 100%);
+      --card-bg: rgba(30, 41, 59, 0.7);
+      --card-border: rgba(255, 255, 255, 0.1);
+      --card-shadow: 0 20px 50px rgba(0, 0, 0, 0.5), inset 0 1px 1px rgba(255, 255, 255, 0.1);
+      
+      --text-main: #f8fafc;
+      --text-sub: #94a3b8;
+      
+      --btn-num-bg: rgba(51, 65, 85, 0.6);
+      --btn-num-hover: rgba(71, 85, 105, 0.8);
+      --btn-num-active: rgba(100, 116, 139, 0.9);
+      --btn-num-text: #f1f5f9;
+      
+      --btn-op-bg: rgba(99, 102, 241, 0.2);
+      --btn-op-hover: rgba(99, 102, 241, 0.35);
+      --btn-op-text: #818cf8;
+      --btn-op-active: #6366f1;
+      
+      --btn-fn-bg: rgba(71, 85, 105, 0.4);
+      --btn-fn-hover: rgba(100, 116, 139, 0.5);
+      --btn-fn-text: #cbd5e1;
+
+      --btn-equal-bg: linear-gradient(135deg, #6366f1 0%, #4f46e5 100%);
+      --btn-equal-hover: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
+      --btn-equal-text: #ffffff;
+      --btn-equal-shadow: 0 4px 15px rgba(99, 102, 241, 0.4);
+
+      --history-bg: rgba(15, 23, 42, 0.85);
+      --history-border: rgba(255, 255, 255, 0.08);
+      --toast-bg: rgba(15, 23, 42, 0.9);
+    }
+
+    [data-theme="light"] {
+      --bg-gradient: radial-gradient(circle at 50% 10%, #f1f5f9 0%, #e2e8f0 100%);
+      --card-bg: rgba(255, 255, 255, 0.85);
+      --card-border: rgba(255, 255, 255, 0.8);
+      --card-shadow: 0 20px 45px rgba(100, 116, 139, 0.2), inset 0 1px 2px rgba(255, 255, 255, 0.9);
+
+      --text-main: #0f172a;
+      --text-sub: #64748b;
+
+      --btn-num-bg: #ffffff;
+      --btn-num-hover: #f1f5f9;
+      --btn-num-active: #e2e8f0;
+      --btn-num-text: #1e293b;
+
+      --btn-op-bg: #e0e7ff;
+      --btn-op-hover: #c7d2fe;
+      --btn-op-text: #4338ca;
+      --btn-op-active: #4f46e5;
+
+      --btn-fn-bg: #f1f5f9;
+      --btn-fn-hover: #e2e8f0;
+      --btn-fn-text: #475569;
+
+      --btn-equal-bg: linear-gradient(135deg, #4f46e5 0%, #4338ca 100%);
+      --btn-equal-hover: linear-gradient(135deg, #4338ca 0%, #3730a3 100%);
+      --btn-equal-text: #ffffff;
+      --btn-equal-shadow: 0 4px 15px rgba(79, 70, 229, 0.3);
+
+      --history-bg: rgba(255, 255, 255, 0.95);
+      --history-border: rgba(226, 232, 240, 0.8);
+      --toast-bg: rgba(30, 41, 59, 0.9);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: "Pretendard", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: var(--bg-gradient);
+      padding: 20px;
+      transition: background 0.3s ease;
+      overflow-x: hidden;
+    }
+
+    /* Calculator Main Container */
+    .calculator-wrapper {
+      position: relative;
+      width: 100%;
+      max-width: 380px;
+      background: var(--card-bg);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--card-border);
+      border-radius: 28px;
+      padding: 24px 20px 20px;
+      box-shadow: var(--card-shadow);
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+      transition: all 0.3s ease;
+    }
+
+    /* Header Controls */
+    .calc-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 0 6px;
+    }
+
+    .app-title {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: var(--text-sub);
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .app-title .dot {
+      width: 8px;
+      height: 8px;
+      background: #10b981;
+      border-radius: 50%;
+      display: inline-block;
+      box-shadow: 0 0 8px rgba(16, 185, 129, 0.6);
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .icon-btn {
+      background: transparent;
+      border: none;
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      color: var(--text-sub);
+      transition: all 0.2s ease;
+    }
+
+    .icon-btn:hover {
+      background: var(--btn-num-hover);
+      color: var(--text-main);
+      transform: translateY(-1px);
+    }
+
+    .icon-btn svg {
+      width: 18px;
+      height: 18px;
+      fill: currentColor;
+    }
+
+    /* Display Area */
+    .display-screen {
+      background: rgba(0, 0, 0, 0.05);
+      border-radius: 18px;
+      padding: 16px 14px 12px;
+      text-align: right;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      min-height: 110px;
+      cursor: pointer;
+      position: relative;
+      border: 1px solid rgba(255, 255, 255, 0.04);
+      transition: all 0.2s ease;
+    }
+
+    .display-screen:hover {
+      background: rgba(0, 0, 0, 0.08);
+    }
+
+    .expr-prev {
+      font-size: 0.95rem;
+      color: var(--text-sub);
+      min-height: 22px;
+      word-break: break-all;
+      overflow-x: auto;
+      white-space: nowrap;
+      scrollbar-width: none;
+    }
+    .expr-prev::-webkit-scrollbar {
+      display: none;
+    }
+
+    .main-val {
+      font-size: 2.6rem;
+      font-weight: 700;
+      color: var(--text-main);
+      line-height: 1.2;
+      overflow-x: auto;
+      white-space: nowrap;
+      scrollbar-width: none;
+      transition: font-size 0.15s ease;
+    }
+    .main-val::-webkit-scrollbar {
+      display: none;
+    }
+
+    .copy-hint {
+      position: absolute;
+      top: 8px;
+      left: 12px;
+      font-size: 0.72rem;
+      color: var(--text-sub);
+      opacity: 0.6;
+    }
+
+    /* Keypad Grid */
+    .keypad {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 10px;
+    }
+
+    .btn {
+      height: 60px;
+      border-radius: 16px;
+      border: none;
+      font-size: 1.25rem;
+      font-weight: 600;
+      cursor: pointer;
+      outline: none;
+      transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .btn:active {
+      transform: scale(0.94);
+    }
+
+    /* Button Variations */
+    .btn-num {
+      background: var(--btn-num-bg);
+      color: var(--btn-num-text);
+      font-weight: 500;
+    }
+    .btn-num:hover {
+      background: var(--btn-num-hover);
+    }
+
+    .btn-op {
+      background: var(--btn-op-bg);
+      color: var(--btn-op-text);
+      font-size: 1.4rem;
+    }
+    .btn-op:hover {
+      background: var(--btn-op-hover);
+    }
+
+    .btn-fn {
+      background: var(--btn-fn-bg);
+      color: var(--btn-fn-text);
+      font-size: 1.1rem;
+    }
+    .btn-fn:hover {
+      background: var(--btn-fn-hover);
+    }
+
+    .btn-clear {
+      color: #f43f5e !important;
+    }
+
+    .btn-equal {
+      background: var(--btn-equal-bg);
+      color: var(--btn-equal-text);
+      font-size: 1.5rem;
+      box-shadow: var(--btn-equal-shadow);
+    }
+    .btn-equal:hover {
+      background: var(--btn-equal-hover);
+      box-shadow: 0 6px 20px rgba(99, 102, 241, 0.5);
+    }
+
+    /* History Drawer */
+    .history-drawer {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: var(--history-bg);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border-radius: 28px;
+      padding: 24px 20px;
+      display: flex;
+      flex-direction: column;
+      z-index: 10;
+      transform: translateY(100%);
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    .history-drawer.open {
+      transform: translateY(0);
+      opacity: 1;
+      pointer-events: all;
+    }
+
+    .history-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--history-border);
+    }
+
+    .history-title {
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .history-actions {
+      display: flex;
+      gap: 6px;
+    }
+
+    .btn-text {
+      background: transparent;
+      border: none;
+      color: #f43f5e;
+      font-size: 0.82rem;
+      font-weight: 600;
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: 6px;
+      transition: background 0.2s;
+    }
+    .btn-text:hover {
+      background: rgba(244, 63, 94, 0.1);
+    }
+
+    .history-list {
+      flex: 1;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      padding-right: 4px;
+      scrollbar-width: thin;
+    }
+
+    .history-item {
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: rgba(125, 125, 125, 0.08);
+      cursor: pointer;
+      transition: all 0.2s ease;
+      text-align: right;
+    }
+
+    .history-item:hover {
+      background: rgba(125, 125, 125, 0.15);
+      transform: translateX(-2px);
+    }
+
+    .hist-calc {
+      font-size: 0.85rem;
+      color: var(--text-sub);
+      margin-bottom: 2px;
+    }
+
+    .hist-res {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--text-main);
+    }
+
+    .history-empty {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100%;
+      color: var(--text-sub);
+      font-size: 0.95rem;
+      gap: 8px;
+    }
+
+    /* Toast Notification */
+    .toast {
+      position: fixed;
+      bottom: 30px;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: var(--toast-bg);
+      color: #fff;
+      padding: 10px 20px;
+      border-radius: 30px;
+      font-size: 0.88rem;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+      opacity: 0;
+      pointer-events: none;
+      transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+      z-index: 100;
+      border: 1px solid rgba(255, 255, 255, 0.15);
+    }
+
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+
+    /* Key Guide Footer */
+    .footer-hint {
+      text-align: center;
+      font-size: 0.75rem;
+      color: var(--text-sub);
+      margin-top: 4px;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="calculator-wrapper">
+    <!-- Header Controls -->
+    <div class="calc-header">
+      <div class="app-title">
+        <span class="dot"></span>
+        <span>CALCULATOR</span>
+      </div>
+      <div class="header-actions">
+        <button class="icon-btn" id="themeBtn" title="테마 변경 (라이트/다크)">
+          <!-- Moon Icon -->
+          <svg id="themeIcon" viewBox="0 0 24 24">
+            <path d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" />
+          </svg>
+        </button>
+        <button class="icon-btn" id="historyToggleBtn" title="계산 기록">
+          <!-- History Clock Icon -->
+          <svg viewBox="0 0 24 24">
+            <path d="M12 2a10 10 0 100 20 10 10 0 000-20zm0 18a8 8 0 110-16 8 8 0 010 16zm.5-13H11v6l5.25 3.15.75-1.23-4.5-2.67V7z"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+
+    <!-- Screen Display -->
+    <div class="display-screen" id="displayArea" title="클릭하여 결과 복사">
+      <span class="copy-hint">클릭시 복사</span>
+      <div class="expr-prev" id="exprDisplay"></div>
+      <div class="main-val" id="mainDisplay">0</div>
+    </div>
+
+    <!-- Keypad -->
+    <div class="keypad">
+      <!-- Row 1 -->
+      <button class="btn btn-fn btn-clear" data-action="all-clear">AC</button>
+      <button class="btn btn-fn" data-action="backspace">⌫</button>
+      <button class="btn btn-fn" data-action="percent">%</button>
+      <button class="btn btn-op" data-action="operator" data-val="÷">÷</button>
+
+      <!-- Row 2 -->
+      <button class="btn btn-num" data-val="7">7</button>
+      <button class="btn btn-num" data-val="8">8</button>
+      <button class="btn btn-num" data-val="9">9</button>
+      <button class="btn btn-op" data-action="operator" data-val="×">×</button>
+
+      <!-- Row 3 -->
+      <button class="btn btn-num" data-val="4">4</button>
+      <button class="btn btn-num" data-val="5">5</button>
+      <button class="btn btn-num" data-val="6">6</button>
+      <button class="btn btn-op" data-action="operator" data-val="-">-</button>
+
+      <!-- Row 4 -->
+      <button class="btn btn-num" data-val="1">1</button>
+      <button class="btn btn-num" data-val="2">2</button>
+      <button class="btn btn-num" data-val="3">3</button>
+      <button class="btn btn-op" data-action="operator" data-val="+">+</button>
+
+      <!-- Row 5 -->
+      <button class="btn btn-fn" data-action="negate">±</button>
+      <button class="btn btn-num" data-val="0">0</button>
+      <button class="btn btn-fn" data-action="decimal">.</button>
+      <button class="btn btn-equal" data-action="calculate">=</button>
+    </div>
+
+    <div class="footer-hint">키보드 입력 지원 (숫자, +, -, *, /, Enter, Backspace)</div>
+
+    <!-- History Drawer -->
+    <div class="history-drawer" id="historyDrawer">
+      <div class="history-header">
+        <span class="history-title">계산 기록</span>
+        <div class="history-actions">
+          <button class="btn-text" id="clearHistoryBtn">전체 삭제</button>
+          <button class="icon-btn" id="closeHistoryBtn">
+            <svg viewBox="0 0 24 24">
+              <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+      <div class="history-list" id="historyList">
+        <div class="history-empty">기록된 계산 내역이 없습니다.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div class="toast" id="toast">결과값이 클립보드에 복사되었습니다.</div>
+
+  <script>
+    (function () {
+      // 상태 관리 변수
+      let currentValue = '0';
+      let previousValue = null;
+      let operator = null;
+      let waitingForSecondOperand = false;
+      let fullExpression = '';
+      let history = JSON.parse(localStorage.getItem('calc_history') || '[]');
+
+      // DOM Elements
+      const mainDisplay = document.getElementById('mainDisplay');
+      const exprDisplay = document.getElementById('exprDisplay');
+      const displayArea = document.getElementById('displayArea');
+      const themeBtn = document.getElementById('themeBtn');
+      const themeIcon = document.getElementById('themeIcon');
+      const historyToggleBtn = document.getElementById('historyToggleBtn');
+      const closeHistoryBtn = document.getElementById('closeHistoryBtn');
+      const historyDrawer = document.getElementById('historyDrawer');
+      const historyList = document.getElementById('historyList');
+      const clearHistoryBtn = document.getElementById('clearHistoryBtn');
+      const toast = document.getElementById('toast');
+
+      // 천 단위 콤마 포맷터 (정수 및 소수점 분리)
+      function formatNumber(numStr) {
+        if (!numStr || numStr === '오류') return numStr;
+        const parts = numStr.split('.');
+        parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+        return parts.join('.');
+      }
+
+      // 화면 업데이트
+      function updateDisplay() {
+        mainDisplay.textContent = formatNumber(currentValue);
+
+        // 글자 수에 따른 폰트 크기 반응형 조절
+        const len = currentValue.length;
+        if (len > 12) {
+          mainDisplay.style.fontSize = '1.6rem';
+        } else if (len > 8) {
+          mainDisplay.style.fontSize = '2.0rem';
+        } else {
+          mainDisplay.style.fontSize = '2.6rem';
+        }
+
+        if (operator && previousValue !== null) {
+          exprDisplay.textContent = `${formatNumber(previousValue)} ${operator}`;
+        } else {
+          exprDisplay.textContent = fullExpression;
+        }
+      }
+
+      // 숫자 입력
+      function inputDigit(digit) {
+        if (waitingForSecondOperand) {
+          currentValue = digit;
+          waitingForSecondOperand = false;
+        } else {
+          if (currentValue === '0' || currentValue === '오류') {
+            currentValue = digit;
+          } else {
+            if (currentValue.replace(/[^0-9]/g, '').length < 15) {
+              currentValue += digit;
+            }
+          }
+        }
+        updateDisplay();
+      }
+
+      // 소수점 입력
+      function inputDecimal() {
+        if (waitingForSecondOperand) {
+          currentValue = '0.';
+          waitingForSecondOperand = false;
+          updateDisplay();
+          return;
+        }
+        if (!currentValue.includes('.')) {
+          currentValue += '.';
+        }
+        updateDisplay();
+      }
+
+      // 부호 전환
+      function toggleNegate() {
+        if (currentValue === '0' || currentValue === '오류') return;
+        currentValue = currentValue.startsWith('-') ? currentValue.slice(1) : '-' + currentValue;
+        updateDisplay();
+      }
+
+      // 백분율 (%)
+      function inputPercent() {
+        if (currentValue === '오류') return;
+        const val = parseFloat(currentValue);
+        if (isNaN(val)) return;
+        
+        let result;
+        if (previousValue !== null && operator) {
+          // 예: 200 + 10% -> 200의 10% = 20
+          result = (parseFloat(previousValue) * val) / 100;
+        } else {
+          result = val / 100;
+        }
+        currentValue = cleanFloat(result).toString();
+        updateDisplay();
+      }
+
+      // 소수점 연산 정밀도 보정
+      function cleanFloat(num) {
+        return Math.round(num * 1e12) / 1e12;
+      }
+
+      // 연산자 처리
+      function handleOperator(nextOp) {
+        const inputValue = parseFloat(currentValue);
+
+        if (operator && waitingForSecondOperand) {
+          operator = nextOp;
+          updateDisplay();
+          return;
+        }
+
+        if (previousValue === null && !isNaN(inputValue)) {
+          previousValue = currentValue;
+        } else if (operator) {
+          const result = executeCalculation(previousValue, currentValue, operator);
+          if (result === '오류') {
+            currentValue = '오류';
+            previousValue = null;
+            operator = null;
+            waitingForSecondOperand = false;
+            updateDisplay();
+            return;
+          }
+          currentValue = cleanFloat(result).toString();
+          previousValue = currentValue;
+        }
+
+        waitingForSecondOperand = true;
+        operator = nextOp;
+        updateDisplay();
+      }
+
+      // 실제 계산 실행
+      function executeCalculation(first, second, op) {
+        const a = parseFloat(first);
+        const b = parseFloat(second);
+        if (isNaN(a) || isNaN(b)) return '오류';
+
+        switch (op) {
+          case '+': return a + b;
+          case '-': return a - b;
+          case '×':
+          case '*': return a * b;
+          case '÷':
+          case '/':
+            if (b === 0) return '오류';
+            return a / b;
+          default:
+            return b;
+        }
+      }
+
+      // 결과 계산 (=)
+      function calculate() {
+        if (operator === null || previousValue === null || waitingForSecondOperand) {
+          return;
+        }
+
+        const exprText = `${formatNumber(previousValue)} ${operator} ${formatNumber(currentValue)}`;
+        const result = executeCalculation(previousValue, currentValue, operator);
+
+        if (result === '오류') {
+          currentValue = '오류';
+          fullExpression = exprText + ' =';
+          previousValue = null;
+          operator = null;
+          waitingForSecondOperand = false;
+          updateDisplay();
+          return;
+        }
+
+        const formattedResult = cleanFloat(result).toString();
+        addHistoryItem(exprText, formattedResult);
+
+        fullExpression = `${exprText} =`;
+        currentValue = formattedResult;
+        previousValue = null;
+        operator = null;
+        waitingForSecondOperand = true;
+        updateDisplay();
+      }
+
+      // 지우기 (Backspace)
+      function backspace() {
+        if (waitingForSecondOperand || currentValue === '오류') return;
+        if (currentValue.length > 1) {
+          currentValue = currentValue.slice(0, -1);
+          if (currentValue === '-') currentValue = '0';
+        } else {
+          currentValue = '0';
+        }
+        updateDisplay();
+      }
+
+      // 전체 초기화 (AC)
+      function allClear() {
+        currentValue = '0';
+        previousValue = null;
+        operator = null;
+        waitingForSecondOperand = false;
+        fullExpression = '';
+        updateDisplay();
+      }
+
+      // 히스토리 추가 및 렌더링
+      function addHistoryItem(expr, res) {
+        history.unshift({ expr, res, date: new Date().toLocaleTimeString() });
+        if (history.length > 30) history.pop();
+        localStorage.setItem('calc_history', JSON.stringify(history));
+        renderHistory();
+      }
+
+      function renderHistory() {
+        if (history.length === 0) {
+          historyList.innerHTML = '<div class="history-empty">기록된 계산 내역이 없습니다.</div>';
+          return;
+        }
+
+        historyList.innerHTML = history.map((item, index) => `
+          <div class="history-item" data-index="${index}">
+            <div class="hist-calc">${item.expr} =</div>
+            <div class="hist-res">${formatNumber(item.res)}</div>
+          </div>
+        `).join('');
+
+        // 클릭시 해당 결과값 가져오기
+        historyList.querySelectorAll('.history-item').forEach(el => {
+          el.addEventListener('click', () => {
+            const idx = el.getAttribute('data-index');
+            currentValue = history[idx].res;
+            waitingForSecondOperand = false;
+            updateDisplay();
+            historyDrawer.classList.remove('open');
+          });
+        });
+      }
+
+      // 클립보드 복사 토스트
+      function showToast(message) {
+        toast.textContent = message;
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 2000);
+      }
+
+      displayArea.addEventListener('click', () => {
+        if (currentValue === '오류') return;
+        navigator.clipboard.writeText(currentValue).then(() => {
+          showToast(`결과값 ${formatNumber(currentValue)} 이(가) 복사되었습니다.`);
+        }).catch(() => {
+          showToast('복사 권한이 없습니다.');
+        });
+      });
+
+      // 히스토리 모달 열기/닫기
+      historyToggleBtn.addEventListener('click', () => {
+        historyDrawer.classList.add('open');
+      });
+      closeHistoryBtn.addEventListener('click', () => {
+        historyDrawer.classList.remove('open');
+      });
+      clearHistoryBtn.addEventListener('click', () => {
+        history = [];
+        localStorage.removeItem('calc_history');
+        renderHistory();
+      });
+
+      // 테마 토글 (라이트 / 다크)
+      const sunIcon = `<path d="M12 7c-2.76 0-5 2.24-5 5s2.24 5 5 5 5-2.24 5-5-2.24-5-5-5zM2 13h2c.55 0 1-.45 1-1s-.45-1-1-1H2c-.55 0-1 .45-1 1s.45 1 1 1zm18 0h2c.55 0 1-.45 1-1s-.45-1-1-1h-2c-.55 0-1 .45-1 1s.45 1 1 1zM11 2v2c0 .55.45 1 1 1s1-.45 1-1V2c0-.55-.45-1-1-1s-1 .45-1 1zm0 18v2c0 .55.45 1 1 1s1-.45 1-1v-2c0-.55-.45-1-1-1s-1 .45-1 1zM5.99 4.58c-.39-.39-1.03-.39-1.41 0s-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41L5.99 4.58zm12.37 12.37c-.39-.39-1.03-.39-1.41 0s-.39 1.03 0 1.41l1.06 1.06c.39.39 1.03.39 1.41 0s.39-1.03 0-1.41l-1.06-1.06zm1.06-10.96c.39-.39.39-1.03 0-1.41s-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06zM7.05 18.36c.39-.39.39-1.03 0-1.41s-1.03-.39-1.41 0l-1.06 1.06c-.39.39-.39 1.03 0 1.41s1.03.39 1.41 0l1.06-1.06z"/>`;
+      const moonIcon = `<path d="M21.752 15.002A9.718 9.718 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" />`;
+
+      const savedTheme = localStorage.getItem('calc_theme') || 'dark';
+      document.documentElement.setAttribute('data-theme', savedTheme);
+      themeIcon.innerHTML = savedTheme === 'dark' ? moonIcon : sunIcon;
+
+      themeBtn.addEventListener('click', () => {
+        const currentTheme = document.documentElement.getAttribute('data-theme');
+        const nextTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        document.documentElement.setAttribute('data-theme', nextTheme);
+        localStorage.setItem('calc_theme', nextTheme);
+        themeIcon.innerHTML = nextTheme === 'dark' ? moonIcon : sunIcon;
+      });
+
+      // 버튼 클릭 이벤트 리스너
+      document.querySelector('.keypad').addEventListener('click', (e) => {
+        const btn = e.target.closest('button');
+        if (!btn) return;
+
+        const action = btn.dataset.action;
+        const val = btn.dataset.val;
+
+        if (!action && val !== undefined) {
+          inputDigit(val);
+        } else if (action === 'operator') {
+          handleOperator(val);
+        } else if (action === 'calculate') {
+          calculate();
+        } else if (action === 'all-clear') {
+          allClear();
+        } else if (action === 'backspace') {
+          backspace();
+        } else if (action === 'decimal') {
+          inputDecimal();
+        } else if (action === 'negate') {
+          toggleNegate();
+        } else if (action === 'percent') {
+          inputPercent();
+        }
+      });
+
+      // 키보드 단축키 지원
+      window.addEventListener('keydown', (e) => {
+        if (e.key >= '0' && e.key <= '9') {
+          inputDigit(e.key);
+        } else if (e.key === '.') {
+          inputDecimal();
+        } else if (e.key === '+' || e.key === '-') {
+          handleOperator(e.key);
+        } else if (e.key === '*') {
+          handleOperator('×');
+        } else if (e.key === '/') {
+          e.preventDefault();
+          handleOperator('÷');
+        } else if (e.key === 'Enter' || e.key === '=') {
+          e.preventDefault();
+          calculate();
+        } else if (e.key === 'Backspace') {
+          backspace();
+        } else if (e.key === 'Escape') {
+          allClear();
+        } else if (e.key === '%') {
+          inputPercent();
+        }
+      });
+
+      // 초기 히스토리 렌더링
+      renderHistory();
+      updateDisplay();
+    })();
+  </script>
+</body>
+</html>
